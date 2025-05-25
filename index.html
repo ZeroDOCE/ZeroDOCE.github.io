@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PS5 WebKit Exploit</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 2rem; }
+    .container { width: 200px; height: 200px; background: #222; position: relative; overflow: hidden; content-visibility: auto; transform: translateZ(0); }
+    .child { width: 100px; height: 100px; background: blue; position: absolute; top: 0; left: 0; transform: translateZ(0); }
+    button { margin-top: 20px; padding: 10px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>PS5 WebKit Exploit (PoC)</h1>
+  <p>Click to trigger Use-After-Free (UAF)</p>
+  <button id="btn">Trigger Exploit</button>
+  <div class="container">
+    <div class="child"></div>
+  </div>
+
+  <script type="module">
+    import { triggerUAF } from './poc.js';
+
+    document.getElementById("btn").addEventListener("click", () => {
+      try {
+        triggerUAF();
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    });
+  </script>
+</body>
+</html>
