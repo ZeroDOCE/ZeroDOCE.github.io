@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>WebKit UAF PoC - Aggressive</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UAF WebKit Exploit Simulation</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
     .container {
       overflow: hidden;
       content-visibility: auto;
@@ -11,6 +16,8 @@
       position: relative;
       width: 200px;
       height: 200px;
+      border: 2px solid #444;
+      margin-bottom: 20px;
     }
     .child {
       width: 100px;
@@ -18,28 +25,46 @@
       position: absolute;
       top: 0;
       left: 0;
-      background: blue;
+      background: #007bff;
       transform: translateZ(0);
     }
     button {
-      margin-top: 20px;
-      padding: 10px;
+      padding: 10px 20px;
       font-size: 16px;
+      cursor: pointer;
+    }
+    #log {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      background: #f4f4f4;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <h1>UAF: WebKit Heap Use-After-Free (Aggressive)</h1>
-  <p>Click to repeatedly trigger the bug and stress the heap.</p>
-  <button id="button">Trigger UAF</button>
+
+  <h1>UAF: WebKit Heap Use-After-Free Simulation</h1>
+  <p>Click the button to simulate a Use-After-Free condition with heap spray.</p>
   <div class="container">
     <div class="child"></div>
   </div>
+  <button id="trigger">Trigger UAF</button>
+
+  <div id="log"></div>
+
   <script type="module">
-    import { triggerUAFRepeated } from './poc.js';
-    document.getElementById('button').addEventListener('click', () => {
-      triggerUAFRepeated();
+    import { triggerUAF } from './poc.js';
+
+    document.getElementById("trigger").addEventListener("click", () => {
+      try {
+        triggerUAF();
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
     });
-  </script>
-</body>
-</html>
+
+    // Debug log redirect
+    import { debug_log } from './module/utils.mjs';
+    const logEl = document.getElementById("log");
