@@ -2,69 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>UAF WebKit Exploit Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PS5 WebKit Exploit</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    .container {
-      overflow: hidden;
-      content-visibility: auto;
-      transform: translateZ(0);
-      position: relative;
-      width: 200px;
-      height: 200px;
-      border: 2px solid #444;
-      margin-bottom: 20px;
-    }
-    .child {
-      width: 100px;
-      height: 100px;
-      position: absolute;
-      top: 0;
-      left: 0;
-      background: #007bff;
-      transform: translateZ(0);
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #log {
-      margin-top: 20px;
-      white-space: pre-wrap;
-      background: #f4f4f4;
-      border: 1px solid #ccc;
-      padding: 10px;
-      font-family: monospace;
-    }
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 2rem; }
+    .container { width: 200px; height: 200px; background: #222; position: relative; overflow: hidden; content-visibility: auto; transform: translateZ(0); }
+    .child { width: 100px; height: 100px; background: blue; position: absolute; top: 0; left: 0; transform: translateZ(0); }
+    button { margin-top: 20px; padding: 10px; font-size: 18px; }
   </style>
 </head>
 <body>
-
-  <h1>UAF: WebKit Heap Use-After-Free Simulation</h1>
-  <p>Click the button to simulate a Use-After-Free condition with heap spray.</p>
+  <h1>PS5 WebKit Exploit (PoC)</h1>
+  <p>Click to trigger Use-After-Free (UAF)</p>
+  <button id="btn">Trigger Exploit</button>
   <div class="container">
     <div class="child"></div>
   </div>
-  <button id="trigger">Trigger UAF</button>
-
-  <div id="log"></div>
 
   <script type="module">
     import { triggerUAF } from './poc.js';
 
-    document.getElementById("trigger").addEventListener("click", () => {
+    document.getElementById("btn").addEventListener("click", () => {
       try {
         triggerUAF();
       } catch (e) {
         alert("Error: " + e.message);
       }
     });
-
-    // Debug log redirect
-    import { debug_log } from './module/utils.mjs';
-    const logEl = document.getElementById("log");
+  </script>
+</body>
+</html>
