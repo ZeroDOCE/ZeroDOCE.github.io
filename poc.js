@@ -7,13 +7,13 @@ function heapSpray() {
   const spray = [];
   const pattern = 0x41414141; // patrón "AAAA"
 
-  // Objeto simula memoria corrupta con método que muestra alerta
-  const fakeObj = {
-    showMessage() {
-      alert("⚠️ Mensaje simulado desde memoria corrupta (fake object).");
-      debug_log("Alert from fakeObj.showMessage() called.");
+  // Creamos un Proxy para detectar accesos (simula corrupción)
+  const proxyObj = new Proxy({}, {
+    get(target, prop) {
+      debug_log(`Proxy object property "${prop.toString()}" accessed — possible corruption!`);
+      return 42;
     }
-  };
+  });
 
   for (let i = 0; i < 3000; i++) {
     let buffer = new ArrayBuffer(0x1000);
@@ -22,9 +22,9 @@ function heapSpray() {
     spray.push(view);
   }
 
-  spray.push(fakeObj);
+  spray.push(proxyObj);
 
-  debug_log("Heap spray with pattern and fakeObj with alert method completed.");
+  debug_log("Heap spray with pattern and proxy object completed.");
   return spray;
 }
 
@@ -48,11 +48,12 @@ export function triggerUAF() {
         debug_log("❌ .child element still in DOM.");
       }
 
-      // Llamar al método showMessage del fakeObj para simular mensaje emergente
+      // Intentar acceder a la propiedad del proxy (simulando uso de memoria corrupta)
       try {
-        spray[spray.length - 1].showMessage();
+        let val = spray[spray.length - 1].someProperty;
+        debug_log(`Proxy object property access returned: ${val}`);
       } catch (e) {
-        debug_log("Error calling showMessage(): " + e.message);
+        debug_log("Error accessing proxy object property: " + e.message);
       }
 
       if (spray.length > 0 && spray[0][0] === pattern) {
