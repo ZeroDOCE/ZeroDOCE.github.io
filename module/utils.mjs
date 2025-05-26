@@ -1,9 +1,10 @@
-export function debug_log(msg) {
-  console.log("[DEBUG] " + msg);
-  try {
-    const p = document.createElement("p");
-    p.textContent = "[DEBUG] " + msg;
-    p.style.color = "lime";
-    document.body.appendChild(p);
-  } catch (_) {}
+export function debug_log(message) {
+  const logArea = document.getElementById("log");
+  if (logArea) {
+    const line = document.createElement("div");
+    line.textContent = "[debug] " + message;
+    logArea.appendChild(line);
+  } else {
+    console.log("[debug] " + message);
+  }
 }
